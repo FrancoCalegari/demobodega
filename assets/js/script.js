@@ -77,16 +77,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Hero Background Slideshow
 	const heroBg = document.getElementById("hero-bg");
 	const heroImages = [
-		"assets/img/gallery/photo-1.jpg",
-		"assets/img/gallery/photo-2.jpg",
-		"assets/img/gallery/photo-3.jpg",
-		"assets/img/gallery/photo1.png",
-		"assets/img/gallery/photo2.png",
-		"assets/img/gallery/photo3.png",
-		"assets/img/gallery/photo4.png",
-		"assets/img/gallery/photo5.png",
-		"assets/img/gallery/photo6.png",
-		"assets/img/gallery/photo7.png",
+		"assets/img/gallery/photo1.webp",
+		"assets/img/gallery/photo2.webp",
+		"assets/img/gallery/photo3.webp",
+		"assets/img/gallery/photo4.webp",
+		"assets/img/gallery/photo5.webp",
+		"assets/img/gallery/photo6.webp",
+		"assets/img/gallery/photo7.webp",
 	];
 
 	// Create divs for each image
