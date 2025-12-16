@@ -106,4 +106,31 @@ document.addEventListener("DOMContentLoaded", function () {
 			}, 5000); // Change every 5 seconds
 		}
 	}
+
+	// Hamburger Menu
+	const hamburger = document.getElementById("hamburger");
+	const navLinks = document.getElementById("nav-links");
+
+	hamburger.addEventListener("click", () => {
+		navLinks.classList.toggle("active");
+		// Optional: Animate icon between bars and times (X)
+		const icon = hamburger.querySelector("i");
+		if (navLinks.classList.contains("active")) {
+			icon.classList.remove("fa-bars");
+			icon.classList.add("fa-xmark");
+		} else {
+			icon.classList.remove("fa-xmark");
+			icon.classList.add("fa-bars");
+		}
+	});
+
+	// Close menu when clicking a link
+	navLinks.querySelectorAll("a").forEach((link) => {
+		link.addEventListener("click", () => {
+			navLinks.classList.remove("active");
+			const icon = hamburger.querySelector("i");
+			icon.classList.remove("fa-xmark");
+			icon.classList.add("fa-bars");
+		});
+	});
 });
