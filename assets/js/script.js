@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			features: [
 				"Transporte Privado (Ida y Vuelta)",
 				"Visita y Degustación en Bodega Tempus Alba",
-				"Almuerzo de 4 Pasos en Bodega Esencia 1870",
+				"Visita, Degustación y Almuerzo de 4 Pasos en Bodega Esencia 1870",
 			],
 			description:
 				"Disfruta de un recorrido exclusivo por dos de las bodegas más emblemáticas de Maipú. Comenzaremos con una inmersión en la enología de Tempus Alba y culminaremos con una experiencia gastronómica inolvidable en los jardines de Esencia 1870.",

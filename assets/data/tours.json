@@ -10,7 +10,7 @@
 		"features": [
 			"Transporte Privado (Ida y Vuelta)",
 			"Visita y Degustación en Bodega Tempus Alba",
-			"Almuerzo de 4 Pasos en Bodega Esencia 1870"
+			"Visita, Degustación y Almuerzo de 4 Pasos en Bodega Esencia 1870"
 		],
 		"description": "Disfruta de un recorrido exclusivo por dos de las bodegas más emblemáticas de Maipú. Comenzaremos con una inmersión en la enología de Tempus Alba y culminaremos con una experiencia gastronómica inolvidable en los jardines de Esencia 1870.",
 		"details": {
@@ -20,6 +20,20 @@
 				"<strong>Segundo Paso:</strong> 2 Empanadas de carne o 2 Empanadas de vegetales. <br><em>Maridaje: Malbec tinto dulce</em>",
 				"<strong>Tercer Paso:</strong> Tira de asado con guarnición de papas rústicas o Lasagna vegetariana. <br><em>Maridaje: Blend de tintos 'Gran pueblo argentino'</em>",
 				"<strong>Cuarto Paso:</strong> Flan con dulce de leche. <br><em>Maridaje: Torrontés blanco dulce</em>"
+			],
+			"wineries": [
+				{
+					"name": "Bodega Tempus Alba",
+					"image": "assets/img/winery-1.jpg",
+					"location": "https://maps.app.goo.gl/ScDtwq5gGPW79yAC8",
+					"instagram": "https://www.instagram.com/tempusalba/"
+				},
+				{
+					"name": "Bodega Esencia 1870",
+					"image": "assets/img/winery-2.jpg",
+					"location": "https://maps.app.goo.gl/LxXovkTsjzkbWiuy7",
+					"instagram": "https://www.instagram.com/bodegaesencia1870/"
+				}
 			]
 		}
 	}
