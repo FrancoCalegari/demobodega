@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			// Add event listeners to new buttons
 			document.querySelectorAll(".btn-tour-details").forEach(function (btn) {
 				btn.addEventListener("click", function (e) {
-					const tourId = parseInt(e.target.getAttribute("data-id"));
+					const tourId = e.target.getAttribute("data-id");
 					loadTourDetails(tourId);
 				});
 			});
@@ -269,6 +269,64 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	// Initialize tours on page load
 	loadTours();
+	loadGallery();
+
+	// Load Gallery from API
+	async function loadGallery() {
+		try {
+			const response = await fetch("/api/gallery");
+			const images = await response.json();
+
+			const galleryContainer = document.getElementById("gallery-container");
+			if (!galleryContainer) return;
+
+			galleryContainer.innerHTML = "";
+
+			if (images.length === 0) {
+				galleryContainer.innerHTML =
+					'<p style="text-align: center; color: var(--text-muted); grid-column: 1 / -1;">No hay imágenes en la galería</p>';
+				return;
+			}
+
+			images.forEach((image) => {
+				const item = document.createElement("div");
+				item.className = "gallery-item";
+				item.innerHTML = `
+					<img
+						src="${image.image_path}"
+						alt="${image.alt || "Galería"}"
+						loading="lazy"
+					/>
+				`;
+				galleryContainer.appendChild(item);
+			});
+
+			// Re-initialize lightbox for new images
+			initLightbox();
+		} catch (error) {
+			console.error("Error loading gallery:", error);
+			const galleryContainer = document.getElementById("gallery-container");
+			if (galleryContainer) {
+				galleryContainer.innerHTML =
+					'<p style="text-align: center; color: var(--text-muted); grid-column: 1 / -1;">Error al cargar la galería</p>';
+			}
+		}
+	}
+
+	// Initialize lightbox for gallery images
+	function initLightbox() {
+		const galleryItems = document.querySelectorAll(".gallery-item img");
+		galleryItems.forEach((img) => {
+			img.addEventListener("click", () => {
+				const lightbox = document.getElementById("lightbox");
+				const lightboxImg = document.getElementById("lightboxImg");
+				if (lightbox && lightboxImg) {
+					lightboxImg.src = img.src;
+					lightbox.classList.add("active");
+				}
+			});
+		});
+	}
 
 	// Tour Modal Logic
 	const tourModal = document.getElementById("tourModal");

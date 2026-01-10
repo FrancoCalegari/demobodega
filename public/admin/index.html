@@ -49,6 +49,15 @@
 					<a href="#" data-section="gallery" class="nav-link">
 						<i class="fa-solid fa-images"></i> Galería
 					</a>
+					<a
+						href="#"
+						data-section="users"
+						class="nav-link"
+						id="usersNavLink"
+						style="display: none"
+					>
+						<i class="fa-solid fa-users"></i> Usuarios
+					</a>
 				</nav>
 				<div class="sidebar-footer">
 					<button id="logoutBtn" class="btn-secondary">
@@ -78,6 +87,31 @@
 						</button>
 					</div>
 					<div id="galleryGrid" class="gallery-admin-grid"></div>
+				</section>
+
+				<!-- Users Section -->
+				<section id="usersSection" class="content-section">
+					<div class="section-header">
+						<h1>Gestión de Usuarios</h1>
+						<button id="addUserBtn" class="btn-primary">
+							<i class="fa-solid fa-plus"></i> Agregar Usuario
+						</button>
+					</div>
+					<div class="table-container">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Username</th>
+									<th>Rol</th>
+									<th>Fecha de Creación</th>
+									<th>Acciones</th>
+								</tr>
+							</thead>
+							<tbody id="usersTableBody">
+								<!-- Users will be loaded here -->
+							</tbody>
+						</table>
+					</div>
 				</section>
 			</main>
 		</div>
@@ -273,6 +307,51 @@
 							Cancelar
 						</button>
 						<button type="submit" class="btn-primary">Subir</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- User Modal -->
+		<div id="userModal" class="modal">
+			<div class="modal-content">
+				<span class="modal-close">&times;</span>
+				<h2 id="userModalTitle">Agregar Usuario</h2>
+				<form id="userForm">
+					<input type="hidden" id="userId" />
+					<div class="form-group">
+						<label>Username *</label>
+						<input type="text" id="username" required autocomplete="off" />
+					</div>
+					<div class="form-group">
+						<label>
+							Contraseña
+							<span
+								id="passwordHint"
+								style="display: none; color: #888; font-size: 0.9em"
+							>
+								(dejar vacío para mantener actual)
+							</span>
+						</label>
+						<input
+							type="password"
+							id="userPassword"
+							autocomplete="new-password"
+						/>
+					</div>
+					<div class="form-group">
+						<label>Rol *</label>
+						<select id="userRole" required>
+							<option value="admin">Admin</option>
+							<option value="moderator">Moderador</option>
+							<option value="viewer">Visualizador</option>
+						</select>
+					</div>
+					<div class="form-actions">
+						<button type="button" class="btn-secondary modal-cancel">
+							Cancelar
+						</button>
+						<button type="submit" class="btn-primary">Guardar</button>
 					</div>
 				</form>
 			</div>
