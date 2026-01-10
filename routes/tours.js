@@ -1,35 +1,48 @@
 const express = require("express");
 const router = express.Router();
-const { runQuery, getQuery, allQuery } = require("../database/db");
+const {
+	supabase,
+	allQuery,
+	getQuery,
+	runInsert,
+	runUpdate,
+	runDelete,
+} = require("../database/supabase");
 const { requireAuth } = require("../middleware/auth");
 
 // GET all tours (public)
 router.get("/", async (req, res) => {
 	try {
-		const tours = await allQuery("SELECT * FROM tours ORDER BY id ASC");
+		// Get all tours with related data using JOIN queries
+		const tours = await allQuery("tours", {
+			order: { column: "created_at", ascending: true },
+		});
 
 		// For each tour, get related data
 		const toursWithDetails = await Promise.all(
 			tours.map(async (tour) => {
-				const features = await allQuery(
-					"SELECT feature FROM features WHERE tourId = ? ORDER BY displayOrder ASC",
-					[tour.id]
-				);
+				// Get features
+				const features = await allQuery("features", {
+					filters: { tour_id: tour.id },
+					select: "feature",
+					order: { column: "display_order", ascending: true },
+				});
 
-				const wineries = await allQuery(
-					"SELECT * FROM wineries WHERE tourId = ? ORDER BY displayOrder ASC",
-					[tour.id]
-				);
+				// Get wineries
+				const wineries = await allQuery("wineries", {
+					filters: { tour_id: tour.id },
+					order: { column: "display_order", ascending: true },
+				});
 
-				const menuSteps = await allQuery(
-					"SELECT step FROM menu_steps WHERE tourId = ? ORDER BY displayOrder ASC",
-					[tour.id]
-				);
+				// Get menu steps
+				const menuSteps = await allQuery("menu_steps", {
+					filters: { tour_id: tour.id },
+					select: "step",
+					order: { column: "display_order", ascending: true },
+				});
 
-				const details = await getQuery(
-					"SELECT menuImage FROM tour_details WHERE tourId = ?",
-					[tour.id]
-				);
+				// Get tour details
+				const details = await getQuery("tour_details", { tour_id: tour.id });
 
 				return {
 					id: tour.id,
@@ -37,13 +50,13 @@ router.get("/", async (req, res) => {
 					subtitle: tour.subtitle,
 					image: tour.image,
 					price: tour.price,
-					priceCurrency: tour.priceCurrency,
-					minGuests: tour.minGuests,
+					priceCurrency: tour.price_currency,
+					minGuests: tour.min_guests,
 					description: tour.description,
 					duration: tour.duration,
 					features: features.map((f) => f.feature),
 					details: {
-						menuImage: details ? details.menuImage : null,
+						menuImage: details ? details.menu_image : null,
 						menuSteps: menuSteps.map((m) => m.step),
 						wineries: wineries,
 					},
@@ -61,39 +74,37 @@ router.get("/", async (req, res) => {
 // GET single tour (public)
 router.get("/:id", async (req, res) => {
 	try {
-		const tour = await getQuery("SELECT * FROM tours WHERE id = ?", [
-			req.params.id,
-		]);
+		const tour = await getQuery("tours", { id: req.params.id });
 
 		if (!tour) {
 			return res.status(404).json({ error: "Tour not found" });
 		}
 
-		const features = await allQuery(
-			"SELECT feature FROM features WHERE tourId = ? ORDER BY displayOrder ASC",
-			[tour.id]
-		);
+		// Get related data
+		const features = await allQuery("features", {
+			filters: { tour_id: tour.id },
+			select: "feature",
+			order: { column: "display_order", ascending: true },
+		});
 
-		const wineries = await allQuery(
-			"SELECT * FROM wineries WHERE tourId = ? ORDER BY displayOrder ASC",
-			[tour.id]
-		);
+		const wineries = await allQuery("wineries", {
+			filters: { tour_id: tour.id },
+			order: { column: "display_order", ascending: true },
+		});
 
-		const menuSteps = await allQuery(
-			"SELECT step FROM menu_steps WHERE tourId = ? ORDER BY displayOrder ASC",
-			[tour.id]
-		);
+		const menuSteps = await allQuery("menu_steps", {
+			filters: { tour_id: tour.id },
+			select: "step",
+			order: { column: "display_order", ascending: true },
+		});
 
-		const details = await getQuery(
-			"SELECT menuImage FROM tour_details WHERE tourId = ?",
-			[tour.id]
-		);
+		const details = await getQuery("tour_details", { tour_id: tour.id });
 
 		res.json({
 			...tour,
 			features: features.map((f) => f.feature),
 			details: {
-				menuImage: details ? details.menuImage : null,
+				menuImage: details ? details.menu_image : null,
 				menuSteps: menuSteps.map((m) => m.step),
 				wineries: wineries,
 			},
@@ -123,30 +134,27 @@ router.post("/", requireAuth, async (req, res) => {
 		} = req.body;
 
 		// Insert main tour
-		const result = await runQuery(
-			`INSERT INTO tours (title, subtitle, image, price, priceCurrency, minGuests, description, duration)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			[
-				title,
-				subtitle,
-				image,
-				price,
-				priceCurrency,
-				minGuests,
-				description,
-				duration,
-			]
-		);
+		const tour = await runInsert("tours", {
+			title,
+			subtitle,
+			image,
+			price,
+			price_currency: priceCurrency,
+			min_guests: minGuests,
+			description,
+			duration,
+		});
 
-		const tourId = result.id;
+		const tourId = tour.id;
 
 		// Insert features
 		if (features && Array.isArray(features)) {
 			for (let i = 0; i < features.length; i++) {
-				await runQuery(
-					"INSERT INTO features (tourId, feature, displayOrder) VALUES (?, ?, ?)",
-					[tourId, features[i], i]
-				);
+				await runInsert("features", {
+					tour_id: tourId,
+					feature: features[i],
+					display_order: i,
+				});
 			}
 		}
 
@@ -154,29 +162,34 @@ router.post("/", requireAuth, async (req, res) => {
 		if (wineries && Array.isArray(wineries)) {
 			for (let i = 0; i < wineries.length; i++) {
 				const w = wineries[i];
-				await runQuery(
-					"INSERT INTO wineries (tourId, name, image, location, instagram, displayOrder) VALUES (?, ?, ?, ?, ?, ?)",
-					[tourId, w.name, w.image, w.location, w.instagram, i]
-				);
+				await runInsert("wineries", {
+					tour_id: tourId,
+					name: w.name,
+					image: w.image,
+					location: w.location,
+					instagram: w.instagram,
+					display_order: i,
+				});
 			}
 		}
 
 		// Insert menu steps
 		if (menuSteps && Array.isArray(menuSteps)) {
 			for (let i = 0; i < menuSteps.length; i++) {
-				await runQuery(
-					"INSERT INTO menu_steps (tourId, step, displayOrder) VALUES (?, ?, ?)",
-					[tourId, menuSteps[i], i]
-				);
+				await runInsert("menu_steps", {
+					tour_id: tourId,
+					step: menuSteps[i],
+					display_order: i,
+				});
 			}
 		}
 
 		// Insert tour details
 		if (menuImage) {
-			await runQuery(
-				"INSERT INTO tour_details (tourId, menuImage) VALUES (?, ?)",
-				[tourId, menuImage]
-			);
+			await runInsert("tour_details", {
+				tour_id: tourId,
+				menu_image: menuImage,
+			});
 		}
 
 		res.json({ success: true, id: tourId });
@@ -205,65 +218,68 @@ router.put("/:id", requireAuth, async (req, res) => {
 		} = req.body;
 
 		// Update main tour
-		await runQuery(
-			`UPDATE tours SET title = ?, subtitle = ?, image = ?, price = ?, priceCurrency = ?, minGuests = ?, description = ?, duration = ?
-       WHERE id = ?`,
-			[
+		await runUpdate(
+			"tours",
+			{
 				title,
 				subtitle,
 				image,
 				price,
-				priceCurrency,
-				minGuests,
+				price_currency: priceCurrency,
+				min_guests: minGuests,
 				description,
 				duration,
-				req.params.id,
-			]
+			},
+			{ id: req.params.id }
 		);
 
 		// Delete and re-insert features
-		await runQuery("DELETE FROM features WHERE tourId = ?", [req.params.id]);
+		await runDelete("features", { tour_id: req.params.id });
 		if (features && Array.isArray(features)) {
 			for (let i = 0; i < features.length; i++) {
-				await runQuery(
-					"INSERT INTO features (tourId, feature, displayOrder) VALUES (?, ?, ?)",
-					[req.params.id, features[i], i]
-				);
+				await runInsert("features", {
+					tour_id: req.params.id,
+					feature: features[i],
+					display_order: i,
+				});
 			}
 		}
 
 		// Delete and re-insert wineries
-		await runQuery("DELETE FROM wineries WHERE tourId = ?", [req.params.id]);
+		await runDelete("wineries", { tour_id: req.params.id });
 		if (wineries && Array.isArray(wineries)) {
 			for (let i = 0; i < wineries.length; i++) {
 				const w = wineries[i];
-				await runQuery(
-					"INSERT INTO wineries (tourId, name, image, location, instagram, displayOrder) VALUES (?, ?, ?, ?, ?, ?)",
-					[req.params.id, w.name, w.image, w.location, w.instagram, i]
-				);
+				await runInsert("wineries", {
+					tour_id: req.params.id,
+					name: w.name,
+					image: w.image,
+					location: w.location,
+					instagram: w.instagram,
+					display_order: i,
+				});
 			}
 		}
 
 		// Delete and re-insert menu steps
-		await runQuery("DELETE FROM menu_steps WHERE tourId = ?", [req.params.id]);
+		await runDelete("menu_steps", { tour_id: req.params.id });
 		if (menuSteps && Array.isArray(menuSteps)) {
 			for (let i = 0; i < menuSteps.length; i++) {
-				await runQuery(
-					"INSERT INTO menu_steps (tourId, step, displayOrder) VALUES (?, ?, ?)",
-					[req.params.id, menuSteps[i], i]
-				);
+				await runInsert("menu_steps", {
+					tour_id: req.params.id,
+					step: menuSteps[i],
+					display_order: i,
+				});
 			}
 		}
 
 		// Update tour details
-		await runQuery("DELETE FROM tour_details WHERE tourId = ?", [
-			req.params.id,
-		]);
+		await runDelete("tour_details", { tour_id: req.params.id });
 		if (menuImage) {
-			await runQuery(
-				"INSERT INTO tour_details (tourId, menuImage) VALUES (?, ?)",
-				[req.params.id, menuImage]
-			);
+			await runInsert("tour_details", {
+				tour_id: req.params.id,
+				menu_image: menuImage,
+			});
 		}
 
 		res.json({ success: true });
@@ -276,7 +292,8 @@ router.put("/:id", requireAuth, async (req, res) => {
 // DELETE tour (admin only)
 router.delete("/:id", requireAuth, async (req, res) => {
 	try {
-		await runQuery("DELETE FROM tours WHERE id = ?", [req.params.id]);
+		// Supabase will cascade delete related records
+		await runDelete("tours", { id: req.params.id });
 		res.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting tour:", error);

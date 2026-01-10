@@ -15,6 +15,10 @@ try {
 	console.warn("⚠️  Cloudinary not configured:", error.message);
 }
 
+// Initialize Supabase database
+const { initializeDatabase } = require("./database/init-supabase");
+initializeDatabase().catch((err) => console.error("Database init error:", err));
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -24,7 +28,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
 	session({
-		secret: process.env.SESSION_SECRET || "valzoe-tour-secret-key-change-in-production",
+		secret:
+			process.env.SESSION_SECRET ||
+			"valzoe-tour-secret-key-change-in-production",
 		resave: false,
 		saveUninitialized: false,
 		cookie: {
@@ -40,6 +46,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // API Routes
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/users", require("./routes/users"));
 app.use("/api/tours", require("./routes/tours"));
 app.use("/api/gallery", require("./routes/gallery"));
 app.use("/api/upload", require("./routes/upload"));

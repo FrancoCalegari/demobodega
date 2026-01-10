@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const { requireAuth } = require("../middleware/auth");
-const { allQuery, runQuery, getQuery } = require("../database/db");
+const {
+	allQuery,
+	runInsert,
+	runUpdate,
+	runDelete,
+	getQuery,
+} = require("../database/supabase");
 const {
 	createUploadMiddleware,
 	destroyCloudinaryAsset,
@@ -13,9 +19,9 @@ const upload = createUploadMiddleware("valzoe-tour/gallery");
 // GET all gallery images (public)
 router.get("/", async (req, res) => {
 	try {
-		const images = await allQuery(
-			"SELECT * FROM gallery ORDER BY displayOrder ASC, createdAt DESC"
-		);
+		const images = await allQuery("gallery", {
+			order: { column: "display_order", ascending: true },
+		});
 		res.json(images);
 	} catch (error) {
 		console.error("Error fetching gallery:", error);
@@ -32,10 +38,12 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
 
 		const { alt, displayOrder } = req.body;
 
-		const result = await runQuery(
-			"INSERT INTO gallery (imagePath, alt, displayOrder, publicId) VALUES (?, ?, ?, ?)",
-			[req.file.path, alt || "", displayOrder || 0, req.file.filename]
-		);
+		const result = await runInsert("gallery", {
+			image_path: req.file.path,
+			alt: alt || "",
+			display_order: displayOrder || 0,
+			public_id: req.file.filename,
+		});
 
 		res.json({ success: true, id: result.id });
 	} catch (error) {
@@ -50,15 +58,13 @@ router.delete("/:id", requireAuth, async (req, res) => {
 		const { id } = req.params;
 
 		// Get the image to delete from Cloudinary
-		const image = await getQuery("SELECT publicId FROM gallery WHERE id = ?", [
-			id,
-		]);
+		const image = await getQuery("gallery", { id });
 
-		if (image && image.publicId) {
-			await destroyCloudinaryAsset(image.publicId, "image");
+		if (image && image.public_id) {
+			await destroyCloudinaryAsset(image.public_id, "image");
 		}
 
-		await runQuery("DELETE FROM gallery WHERE id = ?", [id]);
+		await runDelete("gallery", { id });
 
 		res.json({ success: true });
 	} catch (error) {
