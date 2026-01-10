@@ -4,21 +4,27 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Set minimum date to today
 	// Intelligent Date Selection
 	const dateInput = document.getElementById("date");
-	const now = new Date();
-	const currentHour = now.getHours();
+	if (dateInput) {
+		const now = new Date();
+		const currentHour = now.getHours();
 
-	// If it's past 12 PM, set default/min date to tomorrow
-	if (currentHour >= 12) {
-		const tomorrow = new Date(now);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-		const tomorrowString = tomorrow.toISOString().split("T")[0];
-		dateInput.value = tomorrowString;
-		dateInput.min = tomorrowString;
-	} else {
-		// Otherwise set to today
+		// Calculate today's date string
 		const todayString = now.toISOString().split("T")[0];
-		dateInput.value = todayString;
-		dateInput.min = todayString;
+
+		// If it's past 12 PM, default to tomorrow but still allow today
+		if (currentHour >= 12) {
+			const tomorrow = new Date(now);
+			tomorrow.setDate(tomorrow.getDate() + 1);
+			const tomorrowString = tomorrow.toISOString().split("T")[0];
+			dateInput.value = tomorrowString;
+		} else {
+			dateInput.value = todayString;
+		}
+
+		// Always set min to today (allow selection of today and any future date)
+		dateInput.setAttribute("min", todayString);
+		// Remove any max restriction
+		dateInput.removeAttribute("max");
 	}
 
 	bookingForm.addEventListener("submit", function (e) {
@@ -384,14 +390,107 @@ document.addEventListener("DOMContentLoaded", function () {
                     <img src="${tour.details.menuImage}" alt="Menú Criollo" loading="lazy">
                 </div>
             </div>
-            <div class="modal-actions">
-                 <a href="#reservas" class="btn btn-whatsapp start-booking" onclick="document.getElementById('tourModal').classList.remove('active')">
-                    <i class="fa-brands fa-whatsapp"></i> Reservar Ahora
-                 </a>
-            </div>
+        <div class="modal-actions">
+             <button type="button" class="btn btn-whatsapp" onclick="showBookingPopup('${tour.title}', '${tour.price}', '${tour.priceCurrency}')">
+                <i class="fa-brands fa-whatsapp"></i> Reservar por WhatsApp
+             </button>
+        </div>
         `;
 		tourModal.classList.add("active");
 	}
+
+	// Booking popup for WhatsApp (exposed globally for onclick)
+	window.showBookingPopup = function (tourTitle, price, currency) {
+		// Create popup overlay
+		const popup = document.createElement("div");
+		popup.className = "booking-popup-overlay";
+		popup.innerHTML = `
+			<div class="booking-popup">
+				<h3><i class="fa-brands fa-whatsapp"></i> Reservar por WhatsApp</h3>
+				<p class="popup-tour-name">${tourTitle}</p>
+				<div class="popup-form-group">
+					<label>Cantidad de Personas</label>
+					<input type="number" id="popupGuests" min="1" value="2" class="popup-input" />
+				</div>
+				<div class="popup-price-info">
+					<span>Precio por persona:</span>
+					<span class="price-value">$${price} ${
+			currency && currency !== "undefined" ? currency : "ARS"
+		}</span>
+				</div>
+				<div class="popup-price-total">
+					<span>Precio estimado total:</span>
+					<span class="total-value" id="popupTotal">Calculando...</span>
+				</div>
+				<div class="popup-actions">
+					<button type="button" class="btn-secondary popup-cancel">Cancelar</button>
+					<button type="button" class="btn btn-whatsapp popup-confirm">
+						<i class="fa-brands fa-whatsapp"></i> Enviar Consulta
+					</button>
+				</div>
+			</div>
+		`;
+		document.body.appendChild(popup);
+
+		// Parse price (remove dots for thousands)
+		const priceNumber = parseFloat(price.replace(/\./g, "").replace(",", "."));
+
+		// Calculate and update total
+		function updateTotal() {
+			const guests =
+				parseInt(document.getElementById("popupGuests").value) || 1;
+			const total = priceNumber * guests;
+			const formattedTotal = total.toLocaleString("es-AR");
+			document.getElementById(
+				"popupTotal"
+			).textContent = `$${formattedTotal} ${currency}`;
+		}
+		updateTotal();
+
+		// Update on guest change
+		document
+			.getElementById("popupGuests")
+			.addEventListener("input", updateTotal);
+
+		// Cancel button
+		popup.querySelector(".popup-cancel").addEventListener("click", () => {
+			popup.remove();
+		});
+
+		// Click outside to close
+		popup.addEventListener("click", (e) => {
+			if (e.target === popup) popup.remove();
+		});
+
+		// Confirm button - redirect to WhatsApp
+		popup.querySelector(".popup-confirm").addEventListener("click", () => {
+			const guests =
+				parseInt(document.getElementById("popupGuests").value) || 1;
+			const total = priceNumber * guests;
+			const formattedTotal = total.toLocaleString("es-AR");
+			const currencyText =
+				currency && currency !== "undefined" ? currency : "ARS";
+
+			// Build WhatsApp message with Unicode emojis
+			const message =
+				`\u00a1Hola! Me interesa reservar el tour:\n\n` +
+				`\ud83c\udf77 *Tour:* ${tourTitle}\n` +
+				`\ud83d\udc65 *Cantidad de personas:* ${guests}\n` +
+				`\ud83d\udcb0 *Precio por persona:* $${price} ${currencyText}\n` +
+				`\ud83d\udcb2 *Precio estimado total:* $${formattedTotal} ${currencyText}\n\n` +
+				`\u00bfPodr\u00edan confirmar disponibilidad?`;
+
+			// WhatsApp number (from the site)
+			const phoneNumber = "5492613022740";
+			const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+				message
+			)}`;
+
+			// Open WhatsApp
+			window.open(whatsappUrl, "_blank");
+			popup.remove();
+		});
+	};
 
 	if (modalClose) {
 		modalClose.addEventListener("click", () => {
