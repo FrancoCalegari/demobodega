@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Admin Dashboard - VALZOE TOUR</title>
+		<link rel="stylesheet" href="css/admin.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+		/>
+	</head>
+	<body>
+		<!-- Login Screen -->
+		<div id="loginScreen" class="login-screen">
+			<div class="login-card">
+				<h1>VALZOE TOUR</h1>
+				<h2>Admin Dashboard</h2>
+				<form id="loginForm">
+					<div class="form-group">
+						<label>Usuario</label>
+						<input type="text" id="loginUsername" required />
+					</div>
+					<div class="form-group">
+						<label>Contraseña</label>
+						<input type="password" id="loginPassword" required />
+					</div>
+					<button type="submit" class="btn-primary">Iniciar Sesión</button>
+					<div
+						id="loginError"
+						class="error-message"
+						style="display: none"
+					></div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Admin Dashboard -->
+		<div id="adminDashboard" class="admin-dashboard" style="display: none">
+			<aside class="sidebar">
+				<div class="sidebar-header">
+					<h2>VALZOE TOUR</h2>
+					<p>Admin Panel</p>
+				</div>
+				<nav class="sidebar-nav">
+					<a href="#" data-section="tours" class="nav-link active">
+						<i class="fa-solid fa-wine-glass"></i> Tours
+					</a>
+					<a href="#" data-section="gallery" class="nav-link">
+						<i class="fa-solid fa-images"></i> Galería
+					</a>
+				</nav>
+				<div class="sidebar-footer">
+					<button id="logoutBtn" class="btn-secondary">
+						<i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+					</button>
+				</div>
+			</aside>
+
+			<main class="main-content">
+				<!-- Tours Section -->
+				<section id="toursSection" class="content-section active">
+					<div class="section-header">
+						<h1>Gestión de Tours</h1>
+						<button id="addTourBtn" class="btn-primary">
+							<i class="fa-solid fa-plus"></i> Nuevo Tour
+						</button>
+					</div>
+					<div id="toursTable" class="data-table"></div>
+				</section>
+
+				<!-- Gallery Section -->
+				<section id="gallerySection" class="content-section">
+					<div class="section-header">
+						<h1>Gestión de Galería</h1>
+						<button id="addImageBtn" class="btn-primary">
+							<i class="fa-solid fa-upload"></i> Subir Imagen
+						</button>
+					</div>
+					<div id="galleryGrid" class="gallery-admin-grid"></div>
+				</section>
+			</main>
+		</div>
+
+		<!-- Tour Modal -->
+		<div id="tourModal" class="modal">
+			<div class="modal-content large">
+				<span class="modal-close">&times;</span>
+				<h2 id="tourModalTitle">Nuevo Tour</h2>
+				<form id="tourForm">
+					<input type="hidden" id="tourId" />
+
+					<div class="form-row">
+						<div class="form-group">
+							<label>Título *</label>
+							<input type="text" id="tourTitle" required />
+						</div>
+						<div class="form-group">
+							<label>Subtítulo</label>
+							<input type="text" id="tourSubtitle" />
+						</div>
+					</div>
+
+					<div class="form-row">
+						<div class="form-group">
+							<label>Precio *</label>
+							<input
+								type="text"
+								id="tourPrice"
+								required
+								placeholder="160.000"
+							/>
+						</div>
+						<div class="form-group">
+							<label>Mínimo Personas</label>
+							<input type="number" id="tourMinGuests" value="1" min="1" />
+						</div>
+						<div class="form-group">
+							<label>Duración *</label>
+							<input
+								type="text"
+								id="tourDuration"
+								required
+								placeholder="6 horas"
+							/>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label>Descripción</label>
+						<textarea id="tourDescription" rows="3"></textarea>
+					</div>
+
+					<div class="form-group">
+						<label>Imagen/Video del Tour *</label>
+						<div class="media-upload-tabs">
+							<button type="button" class="tab-btn active" data-tab="upload">
+								Subir Archivo
+							</button>
+							<button type="button" class="tab-btn" data-tab="url">URL</button>
+							<button type="button" class="tab-btn" data-tab="iframe">
+								YouTube Iframe
+							</button>
+						</div>
+						<div class="tab-content" id="uploadTab">
+							<input
+								type="file"
+								id="tourMediaFile"
+								accept="image/*,video/*,.webp,.webm,.avif,.mov,.mp4"
+							/>
+							<div id="tourMediaPreview" style="margin-top: 10px"></div>
+						</div>
+						<div class="tab-content" id="urlTab" style="display: none">
+							<input
+								type="text"
+								id="tourMediaUrl"
+								placeholder="URL de imagen o video"
+							/>
+							<small
+								style="
+									color: var(--admin-muted);
+									display: block;
+									margin-top: 5px;
+								"
+							>
+								Ej: https://example.com/imagen.jpg
+							</small>
+						</div>
+						<div class="tab-content" id="iframeTab" style="display: none">
+							<textarea
+								id="tourMediaIframe"
+								rows="4"
+								placeholder="Pega el iframe completo de YouTube aquí"
+							></textarea>
+							<small
+								style="
+									color: var(--admin-muted);
+									display: block;
+									margin-top: 5px;
+								"
+							>
+								Ej: &lt;iframe src="https://www.youtube.com/embed/..."
+								...&gt;&lt;/iframe&gt;
+							</small>
+						</div>
+						<input type="hidden" id="tourImage" />
+					</div>
+
+					<div class="form-group">
+						<label>Características (una por línea)</label>
+						<textarea
+							id="tourFeatures"
+							rows="4"
+							placeholder="Transporte Privado&#10;Visita y Degustación"
+						></textarea>
+					</div>
+
+					<h3>Bodegas</h3>
+					<div id="wineriesContainer"></div>
+					<button type="button" id="addWineryBtn" class="btn-secondary">
+						<i class="fa-solid fa-plus"></i> Añadir Bodega
+					</button>
+
+					<h3>Menú (4 Pasos)</h3>
+					<div class="form-group">
+						<label>Imagen del Menú</label>
+						<div class="media-upload-tabs">
+							<button
+								type="button"
+								class="menu-tab-btn active"
+								data-menu-tab="upload"
+							>
+								Subir Archivo
+							</button>
+							<button type="button" class="menu-tab-btn" data-menu-tab="url">
+								URL
+							</button>
+						</div>
+						<div class="tab-content" id="menuUploadTab">
+							<input type="file" id="menuImageFile" accept="image/*" />
+							<div id="menuImagePreview" style="margin-top: 10px"></div>
+						</div>
+						<div class="tab-content" id="menuUrlTab" style="display: none">
+							<input
+								type="text"
+								id="menuImageUrl"
+								placeholder="URL de imagen del menú"
+							/>
+						</div>
+						<input type="hidden" id="menuImage" />
+					</div>
+					<div class="form-group">
+						<label>Pasos del Menú (uno por línea)</label>
+						<textarea id="menuSteps" rows="6"></textarea>
+					</div>
+
+					<div class="form-actions">
+						<button type="button" class="btn-secondary modal-cancel">
+							Cancelar
+						</button>
+						<button type="submit" class="btn-primary">Guardar</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Gallery Upload Modal -->
+		<div id="galleryModal" class="modal">
+			<div class="modal-content">
+				<span class="modal-close">&times;</span>
+				<h2>Subir Imagen a Galería</h2>
+				<form id="galleryForm" enctype="multipart/form-data">
+					<div class="form-group">
+						<label>Imagen *</label>
+						<input
+							type="file"
+							id="galleryImageInput"
+							accept="image/*"
+							required
+						/>
+						<div id="imagePreview" style="margin-top: 10px"></div>
+					</div>
+					<div class="form-group">
+						<label>Texto Alternativo</label>
+						<input
+							type="text"
+							id="galleryAlt"
+							placeholder="Descripción de la imagen"
+						/>
+					</div>
+					<div class="form-actions">
+						<button type="button" class="btn-secondary modal-cancel">
+							Cancelar
+						</button>
+						<button type="submit" class="btn-primary">Subir</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<script src="js/admin.js"></script>
+	</body>
+</html>

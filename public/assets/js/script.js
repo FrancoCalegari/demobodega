@@ -155,72 +155,76 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 	});
 
-	// Load Tours
-	const tours = [
-		{
-			id: 1,
-			title: "Experiencia Completa Maipú",
-			subtitle: "Tempus Alba + Esencia 1870",
-			image: "assets/img/winery-2.jpg",
-			price: "160.000",
-			priceCurrency: "ARS",
-			minGuests: 1,
-			features: [
-				"Transporte Privado (Ida y Vuelta)",
-				"Visita y Degustación en Bodega Tempus Alba",
-				"Visita, Degustación y Almuerzo de 4 Pasos en Bodega Esencia 1870",
-			],
-			description:
-				"Disfruta de un recorrido exclusivo por dos de las bodegas más emblemáticas de Maipú. Comenzaremos con una inmersión en la enología de Tempus Alba y culminaremos con una experiencia gastronómica inolvidable en los jardines de Esencia 1870.",
-			details: {
-				menuImage: "assets/img/menu-criollo.png",
-				menuSteps: [
-					"<strong>Primer Paso:</strong> Tapeo regional acompañado de un pan de focaccia. <br><em>Maridaje: Moscatuel blanco seco</em>",
-					"<strong>Segundo Paso:</strong> 2 Empanadas de carne o 2 Empanadas de vegetales. <br><em>Maridaje: Malbec tinto dulce</em>",
-					"<strong>Tercer Paso:</strong> Tira de asado con guarnición de papas rústicas o Lasagna vegetariana. <br><em>Maridaje: Blend de tintos 'Gran pueblo argentino'</em>",
-					"<strong>Cuarto Paso:</strong> Flan con dulce de leche. <br><em>Maridaje: Torrontés blanco dulce</em>",
-				],
-				wineries: [
-					{
-						name: "Bodega Tempus Alba",
-						image: "assets/img/winery-1.jpg",
-						location: "https://maps.app.goo.gl/ScDtwq5gGPW79yAC8",
-						instagram: "https://www.instagram.com/tempusalba/",
-					},
-					{
-						name: "Bodega Esencia 1870",
-						image: "assets/img/winery-2.jpg",
-						location: "https://maps.app.goo.gl/LxXovkTsjzkbWiuy7",
-						instagram: "https://www.instagram.com/bodegaesencia1870/",
-					},
-				],
-			},
-		},
-	];
+	// Load Tours from API
+	async function loadTours() {
+		try {
+			const response = await fetch("/api/tours");
+			const tours = await response.json();
 
-	const toursContainer = document.getElementById("tours-container");
-	if (toursContainer) {
-		toursContainer.innerHTML = ""; // Clear loading message
+			const toursContainer = document.getElementById("tours-container");
+			if (!toursContainer) return;
 
-		tours.forEach((tour) => {
-			const card = document.createElement("article");
-			card.className = "tour-card";
+			toursContainer.innerHTML = ""; // Clear loading message
 
-			// Features list
-			const featuresHtml = tour.features
-				.map(
-					(feature) => `<li><i class="fa-solid fa-check"></i> ${feature}</li>`
-				)
-				.join("");
+			tours.forEach((tour) => {
+				const card = document.createElement("article");
+				card.className = "tour-card";
 
-			card.innerHTML = `
-                <div class="card-image" style="background-image: url('${tour.image}')">
-                    <div class="badge">Paquete Destacado</div>
-                </div>
+				// Features list
+				const featuresHtml = tour.features
+					.map(
+						(feature) => `<li><i class="fa-solid fa-check"></i> ${feature}</li>`
+					)
+					.join("");
+
+				// Duration display
+				const durationHtml = tour.duration
+					? `<p class="tour-duration"><i class="fa-solid fa-clock"></i> ${tour.duration}</p>`
+					: "";
+
+				// Media rendering (image, video, or YouTube iframe)
+				let mediaHtml = "";
+				if (tour.image) {
+					// Check if it's a YouTube embed URL
+					if (tour.image.includes("youtube.com/embed/")) {
+						mediaHtml = `
+							<div class="card-media-wrapper">
+								<iframe src="${tour.image}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+							</div>
+						`;
+					}
+					// Check if it's a video file
+					else if (tour.image.match(/\.(mp4|webm|mov)$/i)) {
+						mediaHtml = `
+							<div class="card-media-wrapper">
+								<video src="${tour.image}" autoplay loop muted playsinline></video>
+							</div>
+						`;
+					}
+					// Otherwise it's an image
+					else {
+						mediaHtml = `
+							<div class="card-image" style="background-image: url('${tour.image}')">
+								<div class="badge">Paquete Destacado</div>
+							</div>
+						`;
+					}
+				} else {
+					// Fallback if no image
+					mediaHtml = `
+						<div class="card-image" style="background-image: url('assets/img/winery-default.jpg')">
+							<div class="badge">Paquete Destacado</div>
+						</div>
+					`;
+				}
+
+				card.innerHTML = `
+					${mediaHtml}
                 <div class="card-content">
                     <h3>${tour.title}</h3>
                     <p class="tour-subtitle">${tour.subtitle}</p>
                     <p>${tour.description}</p>
+                    ${durationHtml}
                     <ul class="card-features">
                         ${featuresHtml}
                     </ul>
@@ -232,18 +236,39 @@ document.addEventListener("DOMContentLoaded", function () {
                     <button class="btn btn-primary btn-tour-details" data-id="${tour.id}">Ver Más Detalles</button>
                 </div>
             `;
-			toursContainer.appendChild(card);
-		});
-
-		// Add event listeners to new buttons
-		document.querySelectorAll(".btn-tour-details").forEach((btn) => {
-			btn.addEventListener("click", (e) => {
-				const tourId = parseInt(e.target.getAttribute("data-id"));
-				const tour = tours.find((t) => t.id === tourId);
-				if (tour) openTourModal(tour);
+				toursContainer.appendChild(card);
 			});
-		});
+
+			// Add event listeners to new buttons
+			document.querySelectorAll(".btn-tour-details").forEach(function (btn) {
+				btn.addEventListener("click", function (e) {
+					const tourId = parseInt(e.target.getAttribute("data-id"));
+					loadTourDetails(tourId);
+				});
+			});
+		} catch (error) {
+			console.error("Error loading tours:", error);
+			const toursContainer = document.getElementById("tours-container");
+			if (toursContainer) {
+				toursContainer.innerHTML =
+					'<p style="text-align: center; color: var(--text-muted);">Error al cargar los tours. Por favor recarga la página.</p>';
+			}
+		}
 	}
+
+	// Load tour details for modal
+	async function loadTourDetails(tourId) {
+		try {
+			const response = await fetch(`/api/tours/${tourId}`);
+			const tour = await response.json();
+			openTourModal(tour);
+		} catch (error) {
+			console.error("Error loading tour details:", error);
+		}
+	}
+
+	// Initialize tours on page load
+	loadTours();
 
 	// Tour Modal Logic
 	const tourModal = document.getElementById("tourModal");
